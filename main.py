@@ -9,43 +9,77 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
-net = IPNetwork('10.14.12.1/22')
+
+# assuming that switch passowrd and login is the same for all of them
+username = input("Enter username to logon to switch: ")
+password = input("Enter password to logon to switch: ")
+names = input("Enter endpoints' name source filename: ")
+arp_source = input("Enter arp source filename: ")
+network = input("Enter you netowrk (network ip/mask, 192.0.0.1/22): ")
+
+
+ip_ssh = []
+ip_telnet = []
+# ask for switches ip
+rep = "k"
+while rep != "q":
+    rep = input("Enter switch ip with ssh protocol (press 'q' to skip): ")
+    ip_ssh.append(rep)
+rep = "k"
+while rep != "q":
+    rep = input("Enter switch ip with telnet protocol (press 'q' to skip): ")
+    ip_ssh.append(rep)
+
+
+net = IPNetwork(network)
 manager = arp_manager(net)
-mac_ip = manager.generate_arp_table()
+# you can either generate arp list from current configuration or load previous one
+#mac_ip = manager.generate_arp_table()
+mac_ip = manager.load_arp_table(arp_source)
 
-
-ip1 = ["10.14.12.154", "10.14.12.140"]
-
-ip_ssh = ["10.14.12.154"]
-ip_telnet = ["10.14.12.141"]
 from_list = []
 to_list = []
 
-
+# iterate through ips of ssh protocol switches
 for i in ip_ssh:
-    switch = ssh_switch(i)
+    # create instance class
+    switch = ssh_switch(i, username, password)
+    # connect by ssh
     switch.est_connection()
+    # get "up" ports
     switch.get_interface_status()
+    # get mac address per port
     int_mac = switch.get_mac_per_interface()
+    # transalte mac to ip based on arp table
     switch.get_ips(mac_ip)
-    #.generate_csv_info()
-    switch.get_names('names_source.csv')
+    # translate ip to name based on csv table
+    switch.get_names(names)
+    # generate output report
+    switch.generate_csv_info()
 
+    # append connections to build graph
     for ip in switch.ip_name.values():
         from_list.append(switch.ip)
         to_list.append(ip)
 
 for i in ip_telnet:
-    switch = telnet_switch(i)
+    # create instance class
+    switch = telnet_switch(i, username, password)
+    # get "up" ports
     switch.get_interface_status()
+    # get mac address per port
     switch.get_mac_per_interface()
+    # transalte mac to ip based on arp table
     switch.get_ips(mac_ip)
-    switch.get_names('names_source.csv')
+    # translate ip to name based on csv table
+    switch.get_names(names)
+    # generate output report
+    switch.generate_csv_info()
 
+    # append connections to build graph
     for ip in switch.ip_name.values():
         from_list.append(switch.ip)
         to_list.append(ip)
-
 
 
 # Build a dataframe with your connections
@@ -55,5 +89,5 @@ df = pd.DataFrame({'from': from_list, 'to': to_list})
 G = nx.from_pandas_edgelist(df, 'from', 'to')
 
 # Graph with Custom nodes:
-nx.draw(G, with_labels=True, node_size=1500, node_color="skyblue", node_shape="s", alpha=0.5, linewidths=40)
+nx.draw(G, with_labels=True, node_size=1000, node_color="skyblue", node_shape="s", alpha=0.5, linewidths=40)
 plt.show()

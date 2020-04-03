@@ -2,12 +2,13 @@ import paramiko
 import time
 import csv
 import telnetlib
+import os
 
 class ssh_switch:
-    username = "poziadmin"
-    password = "QpAlZm1!"
 
-    def __init__(self, ip):
+    def __init__(self, ip, usr, passw):
+        self.username = usr
+        self.password = passw
         self.ip = ip
         self.ssh_client = paramiko.SSHClient()
         self.interface_mac = dict()
@@ -113,18 +114,25 @@ class ssh_switch:
                 self.ip_name[ip] = all_names[ip]
         print(self.ip_name)
 
-    # generete csv table interface:mac:ip
+    # generete csv table interface:mac:ip:name
     def generate_csv_info(self):
-        with open(self.ip, 'w') as f:
+        with open("./output/"+self.ip+".csv", 'w+') as f:
             for key in self.interface_mac.keys():
-                f.write("%s,%s,%s\n" % (key, self.interface_mac[key], self.mac_ip[self.interface_mac[key]]))
+                port = key
+                mac = self.interface_mac[port]
+                ip = self.mac_ip[mac]
+                if ip == 'no match':
+                    name = "no match"
+                else:
+                    name = self.ip_name[ip]
+                f.write("%s,%s,%s,%s\n" % (port, mac, ip, name))
 
 
 class telnet_switch:
-    username = "poziadmin"
-    password = "QpAlZm1!"
 
-    def __init__(self, ip):
+    def __init__(self, ip, usr, pasw):
+        self.username = usr
+        self.password = pasw
         self.ip = ip
         self.client = telnetlib.Telnet(self.ip)
         self.interface_mac = dict()
@@ -148,6 +156,7 @@ class telnet_switch:
     # get all active interfaces
     def get_interface_status(self):
         try:
+            print("telnet on {0}".format(self.ip))
             self.est_connection()
             self.client.write(b"show ip interface brief\n")
             self.client.write(b"exit\n")
@@ -225,8 +234,15 @@ class telnet_switch:
                 self.ip_name[ip] = all_names[ip]
         print(self.ip_name)
 
-    # generete csv table interface:mac:ip
+    # generete csv table interface:mac:ip:name
     def generate_csv_info(self):
-        with open(self.ip, 'w') as f:
+        with open("./output/"+self.ip+".csv", 'w+') as f:
             for key in self.interface_mac.keys():
-                f.write("%s,%s,%s\n" % (key, self.interface_mac[key], self.mac_ip[self.interface_mac[key]]))
+                port = key
+                mac = self.interface_mac[port]
+                ip = self.mac_ip[mac]
+                if ip == 'no match':
+                    name = "no match"
+                else:
+                    name = self.ip_name[ip]
+                f.write("%s,%s,%s,%s\n" % (port, mac, ip, name))
