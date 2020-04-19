@@ -21,4 +21,7 @@ machine_ip  machine_name\
 Finally you will receive output folder with .csv files containing scuh information: port, mac address, ip and name of machine per port.
 Simple automaticly generated diagrams will be in layout directory. 
 
+An example of automatically generated graph:
+![mapper](https://user-images.githubusercontent.com/30839728/79692891-0593bf80-8268-11ea-939a-151d20bde3fa.PNG)
+
 
